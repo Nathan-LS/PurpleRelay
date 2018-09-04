@@ -1,5 +1,5 @@
 import discord
-import PurpleRelay.Exc as exc
+import Exc
 import asyncio
 from . import PurpleMessage
 import traceback
@@ -32,7 +32,7 @@ class Channel(object):
     def reload_channel(self):
         self.channel_object = self.client.get_channel(self.id)
         if self.channel_object is None:
-            raise exc.PurpleRelayException.ChannelNotFound(self.id)
+            raise Exc.PurpleRelayException.ChannelNotFound(self.id)
         self.tmp_from_filter = []
 
     def add_from(self, from_txt):

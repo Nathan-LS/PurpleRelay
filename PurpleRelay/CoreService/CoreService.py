@@ -2,7 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .Purple import Purple
 from .DiscordBot import DiscordBot
 from .Channel import Channel
-import PurpleRelay.Exc as exc
+import Exc
 import configparser
 import sys
 import janus
@@ -53,12 +53,12 @@ class CoreService(object):
                     c = Channel(id, self.bot)
                     self.channels[id] = c
                     print("Loaded channel with ID of: {}".format(str(id)))
-                except exc.PurpleRelayException.ChannelNotFound as ex:
+                except Exc.PurpleRelayException.ChannelNotFound as ex:
                     print(ex)
             else:
                 try:
                     result.reload_channel()
-                except exc.PurpleRelayException.ChannelNotFound as ex:
+                except Exc.PurpleRelayException.ChannelNotFound as ex:
                     print(ex)
                     self.remove_channel(id)
         except Exception as ex:

@@ -61,6 +61,9 @@ class DiscordBot(discord.Client):
         if not self.core.bot_token:
             print("Config bot token missing")
             os._exit(1)
-        self.run(self.core.bot_token)
-
-
+        try:
+            self.run(self.core.bot_token)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            os._exit(1)
