@@ -21,6 +21,7 @@ class DiscordBot(discord.Client):
         print('This bot is a member of:')
         print('Servers: {}'.format(str(len(self.guilds))))
         print('-------------------')
+        self.core.threadex.submit(self.core.read_json)
 
     async def message_filter(self):
         await self.wait_until_ready()

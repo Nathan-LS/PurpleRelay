@@ -26,7 +26,6 @@ class CoreService(object):
         self.discord_loop = asyncio.new_event_loop()
         self.messages = janus.Queue(loop=self.discord_loop)
         self.bot = DiscordBot(self)
-        self.task_json = self.threadex.submit(self.read_json)
         self.task_purple = self.threadex.submit(self.purple.run)
         self.bot.start_bot()
 
