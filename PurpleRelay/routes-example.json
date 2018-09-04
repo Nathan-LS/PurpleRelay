@@ -1,0 +1,21 @@
+{
+  "master": {
+    "messages": {
+    }
+  },
+  "example": {
+    "messages": {
+      "user@localhost": [
+        422614565159960576,
+        235,
+        455
+      ],
+      "user2": [
+        123
+      ],
+      "user3": [
+        235
+      ]
+    }
+  }
+}
