@@ -19,6 +19,7 @@ class CoreService(object):
         self.bot_token = None
         self.spam_control = None
         self.spam_decay = None
+        self.embed_color = None
         self.read_config()
         self.threadex = ThreadPoolExecutor(max_workers=3)
         self.purple = Purple(self)
@@ -39,6 +40,7 @@ class CoreService(object):
             self.bot_token = config_file.get("discord", "token", fallback=None)
             self.spam_control = config_file.getboolean("relay", "spam_control", fallback=False)
             self.spam_decay = config_file.getint("relay", "spam_decay", fallback=30)
+            self.embed_color = config_file.getint("relay", "embed_color", fallback=4659341)
         except FileExistsError:
             print("Missing config.ini file.")
             sys.exit(1)
@@ -83,6 +85,17 @@ class CoreService(object):
     def get_channel(self, id):
         return self.channels.get(id)
 
+    def process_messages(self, messages):
+        try:
+            for from_ad, channel_ids in messages.items():
+                for id in channel_ids:
+                    ch_obj: Channel = self.get_channel(id)
+                    if ch_obj is not None:
+                        ch_obj.add_from(from_ad)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+
     def read_json(self):
         while True:
             all_ids = []
@@ -97,11 +110,7 @@ class CoreService(object):
                         self.load_channel(id)
                     for id in list(set(self.get_channel_ids()) - all_ids):
                         self.remove_channel(id)
-                    for from_ad, channel_ids in r_msg.items():
-                        for id in channel_ids:
-                            ch_obj: Channel = self.get_channel(id)
-                            if ch_obj is not None:
-                                ch_obj.add_from(from_ad)
+                    self.process_messages(r_msg)
                     for c in self.get_channels():
                         c.finalize()
             except FileNotFoundError:

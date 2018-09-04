@@ -3,6 +3,7 @@ from pydbus import SessionBus
 from .PurpleMessage import PurpleMessage
 import traceback
 import sys
+from . import CoreService
 
 
 class Purple(object):
@@ -12,6 +13,7 @@ class Purple(object):
         try:
             self.purple = bus.get("im.pidgin.purple.PurpleService", "/im/pidgin/purple/PurpleObject")
             self.purple.ReceivedImMsg.connect(self.on_message)
+            print("Connected to Pidgin")
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -26,4 +28,3 @@ class Purple(object):
         GObject.MainLoop().run()
 
 
-from . import CoreService

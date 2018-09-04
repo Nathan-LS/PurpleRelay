@@ -1,8 +1,9 @@
 import discord
 import PurpleRelay.Exc as exc
 import asyncio
-from .PurpleMessage import PurpleMessage
+from . import PurpleMessage
 import traceback
+import datetime
 
 
 class Channel(object):
@@ -37,13 +38,21 @@ class Channel(object):
     def add_from(self, from_txt):
         self.tmp_from_filter.append(str(from_txt))
 
+    def remove_old_messages(self):
+        tmp_sent = []
+        for i in self.sent_messages:
+            if i.get_time() > datetime.datetime.utcnow() - datetime.timedelta(minutes=1):
+                tmp_sent.append(i)
+        self.sent_messages = tmp_sent
+
     def finalize(self):
         self.from_filter = self.tmp_from_filter
+        self.remove_old_messages()
 
     async def filter(self, msg: PurpleMessage):
         if msg in self.sent_messages:
             return
-        if not any(msg.sender.lower() == i.lower() for i in self.from_filter):
+        if not msg.filter(self):
             return
         await self.message_deque.put(msg)
 

@@ -2,6 +2,7 @@ import discord
 import os
 import asyncio
 import traceback
+from . import CoreService
 
 
 class DiscordBot(discord.Client):
@@ -32,7 +33,6 @@ class DiscordBot(discord.Client):
                     await c.filter(msg)
                 except Exception as ex:
                     print(ex)
-            await asyncio.sleep(.1)
 
     async def message_deque(self):
         await self.wait_until_ready()
@@ -64,4 +64,3 @@ class DiscordBot(discord.Client):
         self.run(self.core.bot_token)
 
 
-from . import CoreService

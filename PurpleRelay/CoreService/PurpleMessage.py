@@ -1,6 +1,8 @@
 import datetime
 import discord
 import traceback
+from . import Channel
+from . import CoreService
 
 
 class PurpleMessage(object):
@@ -12,7 +14,7 @@ class PurpleMessage(object):
         self.conversation = conversation
         self.flags = flags
         self.time = datetime.datetime.utcnow()
-        self.embed = discord.Embed(timestamp=self.time, color=discord.Color(6429101))
+        self.embed = discord.Embed(timestamp=self.time, color=discord.Color(self.core.embed_color))
         self.embed.title = ""
         self.message_txt = "{} - {}".format(str(self.sender), str(self.message))
         self.embed.description = self.message_txt
@@ -30,6 +32,15 @@ class PurpleMessage(object):
         else:
             return False
 
+    def get_time(self):
+        return self.time
+
+    def filter(self, channel_object):
+        assert isinstance(channel_object, Channel.Channel)
+        if not any(self.sender.lower() == i.lower() for i in channel_object.from_filter):
+            return False
+        return True
+
     async def post(self, channel: discord.TextChannel):
         await channel.send(content=self.core.mention, embed=self.embed)
         channel_name = "Unknown"
@@ -42,4 +53,3 @@ class PurpleMessage(object):
         print("Delivered message: '{}' to channel: {}".format(self.message_txt, str(channel_name)))
 
 
-from . import CoreService
