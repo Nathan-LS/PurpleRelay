@@ -1,126 +1,86 @@
 from concurrent.futures import ThreadPoolExecutor
-from .Purple import Purple
-from .DiscordBot import DiscordBot
-from .Channel import Channel
-import Exc
-import configparser
 import sys
-import janus
-import asyncio
 import json
-import time
+import os
 import traceback
+import asyncio
+from CoreService.RelayRouter.RouteSource import RouteSource
+from CoreService.RelayRouter.RouteTarget import RouteTarget
+from CoreService.RelayRouter.RouteDispatch import RouteDispatch
+from CoreService.PurpleAPI.Purple import Purple
+from typing import List
 
 
 class CoreService(object):
     def __init__(self):
-        self.channels = {}
-        self.mention = None
-        self.bot_token = None
-        self.spam_control = None
-        self.spam_decay = None
-        self.embed_color = None
-        self.read_config()
-        self.threadex = ThreadPoolExecutor(max_workers=3)
-        self.purple = Purple(self)
 
+        self.relays: List[RouteSource] = []
+        self.bot_token = None
+        self.max_dbus_reconnect = 5
+
+        self.threadex = ThreadPoolExecutor(max_workers=3)
         self.discord_loop = asyncio.new_event_loop()
-        self.messages = janus.Queue(loop=self.discord_loop)
-        self.bot = DiscordBot(self)
-        self.task_purple = self.threadex.submit(self.purple.run)
-        self.bot.start_bot()
+        self.discord_loop.set_default_executor(self.threadex)
+        asyncio.set_event_loop(self.discord_loop)
+        self.read_config()
+        self.route_dispatcher = RouteDispatch(self.relays)
+        self.route_dispatcher.start_relay_dequeue_tasks()
+        self.purple = Purple(route_dispatch=self.route_dispatcher, core_service=self,
+                             reconnect_attempts=self.max_dbus_reconnect)
+
+        self.discord_loop.create_task(self.purple.start())
+        self.discord_loop.run_forever()
+
+        #
+        # self.discord_loop = asyncio.new_event_loop()
+        # self.messages = janus.Queue(loop=self.discord_loop)
+        # self.bot = DiscordBot(self)
+        # self.task_purple = self.threadex.submit(self.purple.run)
+        # self.bot.start_bot()
 
     def read_config(self):
-        config_file = configparser.ConfigParser()
         try:
-            with open("config.ini", 'r'):
-                pass
-            config_file.read("config.ini")
-            self.mention = config_file.get("relay", "mention", fallback="")
-            self.bot_token = config_file.get("discord", "token", fallback=None)
-            self.spam_control = config_file.getboolean("relay", "spam_control", fallback=False)
-            self.spam_decay = config_file.getint("relay", "spam_decay", fallback=30)
-            self.embed_color = config_file.getint("relay", "embed_color", fallback=4659341)
-        except FileExistsError:
-            print("Missing config.ini file.")
+            with open("routes.json", "r") as f:
+                d: dict = json.load(f)
+                config: dict = d.get("config")
+                if not isinstance(config, dict):
+                    raise KeyError("Missing config dictionary in route.json.")
+                self.bot_token = config.get("token", "")
+                self.max_dbus_reconnect = int(config.get("max_dbus_reconnect", 5))
+                routes: list = d.get("routes", [])
+                i = 1
+                for r in routes:
+                    self.route_loader(i, r)
+                    i += 1
+        except FileNotFoundError:
+            print("Missing 'routes.json' file. No message routing can occur. "
+                  "Did you forget to copy your 'routes-example.json' file?")
+            sys.exit(1)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
             sys.exit(1)
 
-    def load_channel(self, id):
-        try:
-            result: Channel = self.channels.get(id)
-            if result is None:
-                try:
-                    c = Channel(id, self.bot)
-                    self.channels[id] = c
-                    print("Loaded channel with ID of: {}".format(str(id)))
-                except Exc.PurpleRelayException.ChannelNotFound as ex:
-                    print(ex)
-            else:
-                try:
-                    result.reload_channel()
-                except Exc.PurpleRelayException.ChannelNotFound as ex:
-                    print(ex)
-                    self.remove_channel(id)
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-
-    def remove_channel(self, id):
-        try:
-            del self.channels[id]
-            print("Removed channel with ID of {}.".format(str(id)))
-        except Exception as ex:
-            print(ex)
-
-    async def async_all_channels(self):
-        for c in self.get_channels():
-            yield c
-
-    def get_channels(self):
-        return self.channels.values()
-
-    def get_channel_ids(self):
-        return self.channels.keys()
-
-    def get_channel(self, id):
-        return self.channels.get(id)
-
-    def process_messages(self, messages):
-        try:
-            for from_ad, channel_ids in messages.items():
-                for id in channel_ids:
-                    ch_obj: Channel = self.get_channel(id)
-                    if ch_obj is not None:
-                        ch_obj.add_from(from_ad)
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-
-    def read_json(self):
-        while True:
-            all_ids = []
-            try:
-                with open("routes.json", "r") as f:
-                    data: dict = json.load(f)
-                    r_msg = data.get('master').get('messages')
-                    for items in r_msg.values():
-                        all_ids += [id for id in items]
-                    all_ids = set(all_ids)
-                    for id in all_ids:
-                        self.load_channel(id)
-                    for id in list(set(self.get_channel_ids()) - all_ids):
-                        self.remove_channel(id)
-                    self.process_messages(r_msg)
-                    for c in self.get_channels():
-                        c.finalize()
-            except FileNotFoundError:
-                print(
-                    "Missing 'routes.json' file. No message routing can occur. Did you forget to copy your 'routes-example.json' file?")
-            except Exception as ex:
-                print(ex)
-                traceback.print_exc()
-            time.sleep(30)
+    def route_loader(self, route_number: int, r: dict):
+        targets = []
+        target_number = 1
+        for t in r.get("targets", []):
+            new_target = RouteTarget(target_number, t.get("name"), t.get("channel_id"), t.get("title"), t.get("embed"),
+                                     t.get("embed_color"), t.get("mention"), t.get("strip_mention"),
+                                     t.get("spam_control"), t.get("spam_decay"))
+            targets.append(new_target)
+        route_source = RouteSource(route_number, r.get("name"), r.get("src"), r.get("account"), r.get("sender"),
+                                   r.get("conversation"), r.get("message"), r.get("flags"), targets)
+        self.relays.append(route_source)
 
     @classmethod
     def run(cls):
         cls()
+
+    async def shutdown_self(self, exit_code=0, hard_exit=False):
+        print("Exiting application... Goodbye")
+        self.threadex.shutdown(wait=False)
+        if not hard_exit:
+            sys.exit(exit_code)
+        else:
+            os._exit(exit_code)
