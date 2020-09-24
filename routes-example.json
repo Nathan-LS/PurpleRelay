@@ -1,21 +1,30 @@
 {
-  "master": {
-    "messages": {
-    }
+  "config": {
+    "token": "",
+    "max_dbus_reconnect": 5
   },
-  "example": {
-    "messages": {
-      "user@localhost": [
-        422614565159960576,
-        235,
-        455
-      ],
-      "user2": [
-        123
-      ],
-      "user3": [
-        235
+  "routes": [
+    {
+      "name": "RelayName",
+      "src": "IRC",
+      "account": "",
+      "sender": "",
+      "conversation": "",
+      "message": "",
+      "flags": "",
+      "targets": [
+        {
+          "name": "InternalRouteName",
+          "channel_id": 123,
+          "title": "Relay",
+          "embed": true,
+          "embed_color": 4659341,
+          "mention": "@here",
+          "strip_mention": true,
+          "spam_control": true,
+          "spam_decay": 30
+        }
       ]
     }
-  }
+  ]
 }
