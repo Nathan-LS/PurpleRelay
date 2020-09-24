@@ -8,7 +8,7 @@ class PurpleMessage(object):
         self.account = account
         self.sender = sender
         self.message_html = message
-        self.message = BeautifulSoup(self.message, 'html.parser').get_text()
+        self.message = BeautifulSoup(message, 'html.parser').get_text()
         self.conversation = conversation
         self.flags = flags
         self.time = datetime.datetime.utcnow()
