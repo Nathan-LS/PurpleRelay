@@ -19,3 +19,9 @@ class RouteDispatch(object):
     async def submit_message_to_relays(self, m: PurpleMessage):
         for r in self.relays:
             await r.queue_message(m)
+
+    def get_all_route_targets(self):
+        route_targets = []
+        for r in self.relays:
+            route_targets += r.get_targets()
+        return route_targets

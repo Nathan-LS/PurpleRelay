@@ -1,9 +1,20 @@
 import re
+import discord
+from CoreService.PurpleAPI.PurpleMessage import PurpleMessage
+from typing import List
+import asyncio
+import traceback
 
 
 class RouteTarget(object):
     def __init__(self, order_number: int, name: str, channel_id: int, title: str, embed: bool, embed_color: int,
                  mention: str, strip_mention: bool, spam_control: bool, spam_decay: int):
+        self.queue_unprocessed: asyncio.Queue = asyncio.Queue(loop=asyncio.get_event_loop())
+        self.task = None
+        self.discord_loaded = False
+        self.discord_channel_obj: discord.TextChannel = None
+        self.discord_channel_name = ""
+        self.discord_guild_name = ""
         if name is None:
             self.name: str = "route_{}".format(order_number)
         elif not isinstance(name, str):
@@ -64,3 +75,44 @@ class RouteTarget(object):
             raise TypeError("Route target 'spam_decay' must be of type int. Got '{}'".format(spam_decay))
         else:
             self.spam_decay: int = spam_decay
+
+    async def can_embed(self):
+        if not isinstance(self.discord_channel_obj, discord.TextChannel):
+            return False
+        permissions = self.discord_channel_obj.permissions_for(self.discord_channel_obj.guild.me)
+        return permissions.embed_links
+
+    async def can_message(self):
+        if not isinstance(self.discord_channel_obj, discord.TextChannel):
+            return False
+        permissions = self.discord_channel_obj.permissions_for(self.discord_channel_obj.guild.me)
+        return permissions.send_messages
+
+    async def init_discord_target(self, discord_client: discord.Client):
+        c = discord_client.get_channel(self.channel_id)
+        if isinstance(c, discord.TextChannel):
+            self.discord_channel_obj = c
+            self.discord_loaded = True
+            self.discord_channel_name = c.name
+            self.discord_guild_name = c.guild.name
+        s = "Target Name: '{}' Loaded/Found: {} Loaded Channel Name: '{}' Loaded Server Name: '{}' Can Text: '{}' " \
+            "Can Embed: '{}'".format(self.name, self.discord_loaded, self.discord_channel_name,
+                                     self.discord_guild_name, await self.can_message(), await self.can_embed())
+        print(s)
+        self.start_dequeue_task()
+
+    async def queue_message(self, m: PurpleMessage):
+        await self.queue_unprocessed.put(m)
+
+    def start_dequeue_task(self):
+        self.task = asyncio.get_event_loop().create_task(self.dequeue_task())
+
+    async def dequeue_task(self):
+        while True:
+            try:
+                m = await self.queue_unprocessed.get()
+                await self.discord_channel_obj.send(content=m.message)  # todo filter message before post
+            except Exception as ex:
+                print(ex)
+                traceback.print_exc()
+                await asyncio.sleep(1)

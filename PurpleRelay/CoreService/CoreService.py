@@ -7,6 +7,7 @@ import asyncio
 from CoreService.RelayRouter.RouteSource import RouteSource
 from CoreService.RelayRouter.RouteTarget import RouteTarget
 from CoreService.RelayRouter.RouteDispatch import RouteDispatch
+from CoreService.DiscordBot.DiscordBot import DiscordBot
 from CoreService.PurpleAPI.Purple import Purple
 from typing import List
 
@@ -15,7 +16,7 @@ class CoreService(object):
     def __init__(self):
 
         self.relays: List[RouteSource] = []
-        self.bot_token = None
+        self.bot_token = ""
         self.max_dbus_reconnect = 5
 
         self.threadex = ThreadPoolExecutor(max_workers=3)
@@ -29,7 +30,8 @@ class CoreService(object):
                              reconnect_attempts=self.max_dbus_reconnect)
 
         self.discord_loop.create_task(self.purple.start())
-        self.discord_loop.run_forever()
+        self.bot = DiscordBot(core_service=self)
+        self.bot.start_bot()
 
         #
         # self.discord_loop = asyncio.new_event_loop()
@@ -69,6 +71,7 @@ class CoreService(object):
                                      t.get("embed_color"), t.get("mention"), t.get("strip_mention"),
                                      t.get("spam_control"), t.get("spam_decay"))
             targets.append(new_target)
+            target_number += 1
         route_source = RouteSource(route_number, r.get("name"), r.get("src"), r.get("account"), r.get("sender"),
                                    r.get("conversation"), r.get("message"), r.get("flags"), targets)
         self.relays.append(route_source)

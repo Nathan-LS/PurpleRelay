@@ -66,17 +66,25 @@ class RouteSource(object):
                 raise TypeError("RouteSource was passed a non-relay object in target list.")
         self.targets: List[RouteTarget] = targets
 
+    def get_targets(self):
+        return self.targets
+
     async def queue_message(self, m: PurpleMessage):
         await self.queue_unprocessed.put(m)
 
     def start_dequeue_task(self):
         self.task = asyncio.get_event_loop().create_task(self.dequeue_task())
 
+    async def passes_filter(self, purple_message):
+        return True # todo
+
     async def dequeue_task(self):
         while True:
             try:
                 m = await self.queue_unprocessed.get()
-                print(m)
+                if await self.passes_filter(m):
+                    for r in self.targets:
+                        await r.queue_message(m)
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
