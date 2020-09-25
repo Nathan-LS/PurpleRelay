@@ -8,8 +8,9 @@ import traceback
 
 class RouteTarget(object):
     def __init__(self, order_number: int, name: str, channel_id: int, title: str, embed: bool, embed_color: int,
-                 mention: str, strip_mention: bool, spam_control: bool, spam_decay: int):
+                 mention: str, strip_mention: bool, spam_control: bool, spam_decay: int, timestamp: bool):
         self.queue_unprocessed: asyncio.Queue = asyncio.Queue(loop=asyncio.get_event_loop())
+        self.queue_error: asyncio.Queue = asyncio.Queue(loop=asyncio.get_event_loop())
         self.task = None
         self.discord_loaded = False
         self.discord_channel_obj: discord.TextChannel = None
@@ -76,6 +77,13 @@ class RouteTarget(object):
         else:
             self.spam_decay: int = spam_decay
 
+        if timestamp is None:
+            self.timestamp: bool = True
+        elif not isinstance(timestamp, bool):
+            raise TypeError("Route target 'timestamp' must be of type bool. Got '{}'".format(spam_control))
+        else:
+            self.timestamp: bool = timestamp
+
     async def can_embed(self):
         if not isinstance(self.discord_channel_obj, discord.TextChannel):
             return False
@@ -95,23 +103,22 @@ class RouteTarget(object):
             self.discord_loaded = True
             self.discord_channel_name = c.name
             self.discord_guild_name = c.guild.name
-        s = "Target Name: '{}' Loaded/Found: {} Loaded Channel Name: '{}' Loaded Server Name: '{}' Can Text: '{}' " \
-            "Can Embed: '{}'".format(self.name, self.discord_loaded, self.discord_channel_name,
+        s = "Target Name: {}\nLoaded/Found: {} \nLoaded Channel Name: {}\nLoaded Server Name: {}\nCan Text: {}\n" \
+            "Can Embed: {}\n".format(self.name, self.discord_loaded, self.discord_channel_name,
                                      self.discord_guild_name, await self.can_message(), await self.can_embed())
         print(s)
-        self.start_dequeue_task()
+        self.task = asyncio.get_event_loop().create_task(self.dequeue_task())
 
     async def queue_message(self, m: PurpleMessage):
         await self.queue_unprocessed.put(m)
 
-    def start_dequeue_task(self):
-        self.task = asyncio.get_event_loop().create_task(self.dequeue_task())
-
     async def dequeue_task(self):
         while True:
             try:
-                m = await self.queue_unprocessed.get()
-                await self.discord_channel_obj.send(content=m.message)  # todo filter message before post
+                m: PurpleMessage = await self.queue_unprocessed.get()
+                m_str = m.get_discord_string(title=self.title, timestamp=self.timestamp, mention=self.mention,
+                                             strip_mention=self.strip_mention)
+                await self.discord_channel_obj.send(content=m_str)
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()

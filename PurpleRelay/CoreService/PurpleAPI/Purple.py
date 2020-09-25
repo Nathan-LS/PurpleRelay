@@ -44,7 +44,7 @@ class Purple(object):
     def on_message(self, account, sender, message, conversation, flags):
         account_name = self.purple.PurpleAccountGetUsername(account)
         conv_title = self.purple.PurpleConversationGetTitle(conversation)
-        message_obj = PurpleMessage(account_name, sender, str(message), conv_title, flags)
+        message_obj = PurpleMessage(account_name, sender, message, conv_title, flags)
         self.route_dispatch.queue_message(message_obj)
 
     def account_connecting(self, account):

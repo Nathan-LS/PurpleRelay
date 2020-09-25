@@ -19,6 +19,7 @@
           "title": "Relay",
           "embed": true,
           "embed_color": 4659341,
+          "timestamp": true,
           "mention": "@here",
           "strip_mention": true,
           "spam_control": true,

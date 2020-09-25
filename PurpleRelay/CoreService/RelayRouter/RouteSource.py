@@ -27,39 +27,39 @@ class RouteSource(object):
             self.src: str = src
 
         if not account:
-            self.account: Pattern = re.compile(".*")
+            self.account: Pattern = re.compile(".*", re.DOTALL)
         elif not isinstance(account, str):
             raise TypeError("Route source 'account' must be of type regex str pattern. Got '{}'".format(account))
         else:
-            self.account: Pattern = re.compile(".*")
+            self.account: Pattern = re.compile(".*", re.DOTALL)
 
         if not sender:
-            self.sender: Pattern = re.compile(".*")
+            self.sender: Pattern = re.compile(".*", re.DOTALL)
         elif not isinstance(sender, str):
             raise TypeError("Route source 'sender' must be of type regex str pattern. Got '{}'".format(sender))
         else:
-            self.sender: Pattern = re.compile(sender)
+            self.sender: Pattern = re.compile(sender, re.DOTALL)
 
         if not conversation:
-            self.conversation: Pattern = re.compile(".*")
+            self.conversation: Pattern = re.compile(".*", re.DOTALL)
         elif not isinstance(conversation, str):
             raise TypeError("Route source 'conversation' must be of type regex str pattern. Got '{}'".format(conversation))
         else:
             self.conversation: Pattern = re.compile(conversation)
 
         if not message:
-            self.message: Pattern = re.compile(".*")
+            self.message: Pattern = re.compile(".*", re.DOTALL)
         elif not isinstance(message, str):
             raise TypeError("Route source 'message' must be of type regex str pattern. Got '{}'".format(message))
         else:
             self.message: Pattern = re.compile(message)
 
         if not flags:
-            self.flags: Pattern = re.compile(".*")
+            self.flags: Pattern = re.compile(".*", re.DOTALL)
         elif not isinstance(flags, str):
             raise TypeError("Route source 'flags' must be of type regex str pattern. Got '{}'".format(flags))
         else:
-            self.flags: Pattern = re.compile(flags)
+            self.flags: Pattern = re.compile(flags, re.DOTALL)
 
         for r in targets:
             if not isinstance(r, RouteTarget):
@@ -75,8 +75,9 @@ class RouteSource(object):
     def start_dequeue_task(self):
         self.task = asyncio.get_event_loop().create_task(self.dequeue_task())
 
-    async def passes_filter(self, purple_message):
-        return True # todo
+    async def passes_filter(self, purple_message: PurpleMessage):
+        return purple_message.passes_filter(account=self.account, sender=self.sender, conversation=self.conversation,
+                                            message=self.message, flags=self.flags)
 
     async def dequeue_task(self):
         while True:

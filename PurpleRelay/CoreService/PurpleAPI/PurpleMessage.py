@@ -1,17 +1,21 @@
 import datetime
 import html
 from bs4 import BeautifulSoup
+import re
 
 
 class PurpleMessage(object):
     def __init__(self, account, sender, message, conversation, flags):
-        self.account = account
-        self.sender = sender
+        self.account = str.encode(account, encoding="utf-8", errors="ignore").decode("utf-8", errors="ignore")
+        self.sender = str.encode(sender, encoding="utf-8", errors="ignore").decode("utf-8", errors="ignore")
         self.message_html = message
-        self.message = BeautifulSoup(message, 'html.parser').get_text()
-        self.conversation = conversation
-        self.flags = flags
+        self.message: str = str.encode(BeautifulSoup(message, 'html.parser').get_text(),
+                                       encoding="utf-8", errors="ignore").decode("utf-8", errors="ignore")
+        self.conversation = str.encode(conversation, encoding="utf-8", errors="ignore").decode("utf-8", errors="ignore")
+        self.flags = str(flags)
         self.time = datetime.datetime.utcnow()
+        self.time_str = self.time.strftime("%Y-%m-%d %H:%M")
+        self.discord_char_limit = 1999
 
     def str_object(self):
         """returns string of the entire object for verbose printing mode"""
@@ -25,6 +29,37 @@ class PurpleMessage(object):
 
     def __str__(self):
         return self.str_object()
+
+    def passes_filter(self, account: re.Pattern, sender: re.Pattern, conversation: re.Pattern, message: re.Pattern,
+                      flags: re.Pattern):
+        if account.fullmatch(self.account) is None:
+            return False
+        if sender.fullmatch(self.sender) is None:
+            return False
+        if conversation.fullmatch(self.conversation) is None:
+            return False
+        if message.fullmatch(self.message) is None:
+            return False
+        if flags.fullmatch(self.flags) is None:
+            return False
+        return True
+
+    def get_discord_string(self, title: str, timestamp: bool, mention: str, strip_mention: bool):
+        response = ""
+        if mention:
+            response += "{} ".format(mention)
+        if title:
+            response += "{} ".format(title)
+        if timestamp:
+            response += "{} - ".format(self.time_str)
+        if self.sender:
+            response += "{}: ".format(self.sender)
+        if strip_mention:
+            message_content = self.message.replace("@here", "").replace("@everyone", "")
+        else:
+            message_content = self.message
+        response += message_content
+        return response[:self.discord_char_limit]
 
     # def __eq__(self, other):
     #     if self.sender == other.sender and self.message == other.message:
