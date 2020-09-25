@@ -80,15 +80,19 @@ class CoreService(object):
         days_delete_after = int(logger_dict.get("days_delete_after", 5))
         if bool(logger_dict.get("log_purple_messages", True)):
             PurpleLogger.PurpleLogger.get_logger('PurpleChat', 'purpleChat.log', level=logging.DEBUG,
+                                                 console_print=True, console_level=logging.WARNING,
                                                  days_delete_after=days_delete_after)
         else:
             PurpleLogger.PurpleLogger.get_logger('PurpleChat', 'purpleChat.log', level=logging.INFO,
+                                                 console_print=True, console_level=logging.WARNING,
                                                  days_delete_after=days_delete_after)
         if bool(logger_dict.get("log_routed_messages", True)):
             PurpleLogger.PurpleLogger.get_logger('RelayRoutes', 'relayRoutes.log', level=logging.DEBUG,
+                                                 console_print=True, console_level=logging.WARNING,
                                                  days_delete_after=days_delete_after)
         else:
             PurpleLogger.PurpleLogger.get_logger('RelayRoutes', 'relayRoutes.log', level=logging.INFO,
+                                                 console_print=True, console_level=logging.WARNING,
                                                  days_delete_after=days_delete_after)
 
     @classmethod

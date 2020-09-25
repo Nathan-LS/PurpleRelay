@@ -20,7 +20,7 @@ class PurpleLogger(object):
         logger = logging.getLogger(name)
         if len(logger.handlers) == 0 and not child:
             logger.setLevel(level)
-            f_fmt = logging.Formatter('%(asctime)s %(levelname) - %(message)s')
+            f_fmt = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
             f_fmt.converter = time.gmtime
             if console_print:
                 if console_level >= logging.WARNING:

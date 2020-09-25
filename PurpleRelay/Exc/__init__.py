@@ -1,1 +1,1 @@
-from . import PurpleRelayException as General
+from Exc.PurpleRelayException import PermissionCannotText

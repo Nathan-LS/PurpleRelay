@@ -16,6 +16,8 @@ class PurpleMessage(object):
         self.time = datetime.datetime.utcnow()
         self.time_str = self.time.strftime("%Y-%m-%d %H:%M")
         self.discord_char_limit = 1999
+        self.send_attempts = 0
+        self.max_send_attempts = 3
 
     def str_object(self):
         """returns string of the entire object for verbose printing mode"""
@@ -29,6 +31,18 @@ class PurpleMessage(object):
 
     def __str__(self):
         return self.str_object()
+
+    def max_retries_exceeded(self):
+        return self.send_attempts >= self.max_send_attempts
+
+    def increment_attempt_account(self):
+        self.send_attempts += 1
+
+    def get_send_attempts(self):
+        return self.send_attempts
+
+    def get_max_send_attempts(self):
+        return self.max_send_attempts
 
     def passes_filter(self, account: re.Pattern, sender: re.Pattern, conversation: re.Pattern, message: re.Pattern,
                       flags: re.Pattern):

@@ -5,13 +5,14 @@ from typing import List
 import asyncio
 import traceback
 import PurpleLogger
+from copy import deepcopy
+import Exc
 
 
 class RouteTarget(object):
     def __init__(self, order_number: int, name: str, channel_id: int, title: str, embed: bool, embed_color: int,
                  mention: str, strip_mention: bool, spam_control: bool, spam_decay: int, timestamp: bool):
         self.queue_unprocessed: asyncio.Queue = asyncio.Queue(loop=asyncio.get_event_loop())
-        self.queue_error: asyncio.Queue = asyncio.Queue(loop=asyncio.get_event_loop())
         self.task = None
         self.discord_loaded = False
         self.discord_channel_obj: discord.TextChannel = None
@@ -112,17 +113,47 @@ class RouteTarget(object):
         self.task = asyncio.get_event_loop().create_task(self.dequeue_task())
 
     async def queue_message(self, m: PurpleMessage):
+        copied_message = deepcopy(m)
+        await self.queue_unprocessed.put(copied_message)
+
+    async def requeue_failed_message(self, m: PurpleMessage):
+        attempts = m.get_send_attempts()
+        if attempts == 1:
+            await asyncio.sleep(10)
+        elif attempts == 2:
+            await asyncio.sleep(60)
+        elif attempts == 3:
+            await asyncio.sleep(300)
+        else:
+            await asyncio.sleep(900)
         await self.queue_unprocessed.put(m)
 
     async def dequeue_task(self):
         while True:
             try:
                 m: PurpleMessage = await self.queue_unprocessed.get()
+                m.increment_attempt_account()
                 m_str = m.get_discord_string(title=self.title, timestamp=self.timestamp, mention=self.mention,
                                              strip_mention=self.strip_mention)
-                await self.discord_channel_obj.send(content=m_str)
-                self.lg.debug("Relaying to channel id: {} message: \"{}\"".format(self.channel_id, m_str))
+                try:
+                    if await self.can_message():
+                        await self.discord_channel_obj.send(content=m_str)
+                        self.lg.debug("Relayed to channel id: {} Message: \"{}\"".format(self.channel_id, m_str))
+                    else:
+                        raise Exc.PermissionCannotText(self.channel_id)
+                except Exception as ex:
+                    self.lg.warning("Error when relaying message to channel id: {} - {}".format(self.channel_id, str(ex)))
+                    if m.max_retries_exceeded():
+                        self.lg.warning("Discarded as max retry attempts exceeded on channel id: {} Message: \"{}\"".format(
+                            self.channel_id,  m_str))
+                    else:
+                        self.lg.warning("Requeue Attempt: {} of {} on channel id: {} "
+                                        "Message: \"{}\"".format(m.get_send_attempts(), m.get_max_send_attempts(),
+                                                                 self.channel_id, m_str))
+                        asyncio.get_event_loop().create_task(self.requeue_failed_message(m))
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
+                await asyncio.sleep(5)
+            finally:
                 await asyncio.sleep(1)
