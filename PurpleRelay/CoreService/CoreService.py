@@ -10,8 +10,8 @@ from CoreService.RelayRouter.RouteDispatch import RouteDispatch
 from CoreService.DiscordBot.DiscordBot import DiscordBot
 from CoreService.PurpleAPI.Purple import Purple
 from typing import List
-from functools import partial
-import signal
+import PurpleLogger
+import logging
 
 
 class CoreService(object):
@@ -40,6 +40,10 @@ class CoreService(object):
         try:
             with open("routes.json", "r") as f:
                 d: dict = json.load(f)
+                logger: dict = d.get("logger")
+                if not isinstance(logger, dict):
+                    raise KeyError("Missing logger dictionary in route.json.")
+                self.log_loader(logger)
                 config: dict = d.get("config")
                 if not isinstance(config, dict):
                     raise KeyError("Missing config dictionary in route.json.")
@@ -71,6 +75,21 @@ class CoreService(object):
         route_source = RouteSource(route_number, r.get("name"), r.get("src"), r.get("account"), r.get("sender"),
                                    r.get("conversation"), r.get("message"), r.get("flags"), targets)
         self.relays.append(route_source)
+
+    def log_loader(self, logger_dict: dict):
+        days_delete_after = int(logger_dict.get("days_delete_after", 5))
+        if bool(logger_dict.get("log_purple_messages", True)):
+            PurpleLogger.PurpleLogger.get_logger('PurpleChat', 'purpleChat.log', level=logging.DEBUG,
+                                                 days_delete_after=days_delete_after)
+        else:
+            PurpleLogger.PurpleLogger.get_logger('PurpleChat', 'purpleChat.log', level=logging.INFO,
+                                                 days_delete_after=days_delete_after)
+        if bool(logger_dict.get("log_routed_messages", True)):
+            PurpleLogger.PurpleLogger.get_logger('RelayRoutes', 'relayRoutes.log', level=logging.DEBUG,
+                                                 days_delete_after=days_delete_after)
+        else:
+            PurpleLogger.PurpleLogger.get_logger('RelayRoutes', 'relayRoutes.log', level=logging.INFO,
+                                                 days_delete_after=days_delete_after)
 
     @classmethod
     def run(cls):

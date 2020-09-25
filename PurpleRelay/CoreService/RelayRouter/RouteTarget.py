@@ -4,6 +4,7 @@ from CoreService.PurpleAPI.PurpleMessage import PurpleMessage
 from typing import List
 import asyncio
 import traceback
+import PurpleLogger
 
 
 class RouteTarget(object):
@@ -16,6 +17,7 @@ class RouteTarget(object):
         self.discord_channel_obj: discord.TextChannel = None
         self.discord_channel_name = ""
         self.discord_guild_name = ""
+        self.lg = PurpleLogger.PurpleLogger.get_logger('RelayRoutes', 'relayRoutes.log')
         if name is None:
             self.name: str = "route_{}".format(order_number)
         elif not isinstance(name, str):
@@ -119,6 +121,7 @@ class RouteTarget(object):
                 m_str = m.get_discord_string(title=self.title, timestamp=self.timestamp, mention=self.mention,
                                              strip_mention=self.strip_mention)
                 await self.discord_channel_obj.send(content=m_str)
+                self.lg.debug("Relaying to channel id: {} message: \"{}\"".format(self.channel_id, m_str))
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()

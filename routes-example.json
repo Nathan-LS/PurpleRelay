@@ -27,5 +27,10 @@
         }
       ]
     }
-  ]
+  ],
+  "logger": {
+      "log_purple_messages": true,
+      "log_routed_messages": true,
+      "days_delete_after": 30
+  }
 }

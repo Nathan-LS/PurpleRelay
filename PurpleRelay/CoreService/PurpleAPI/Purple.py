@@ -11,6 +11,7 @@ import os
 import asyncio
 import signal
 from functools import partial
+import PurpleLogger
 
 
 class Purple(object):
@@ -20,6 +21,7 @@ class Purple(object):
         self.loop = None
         self.purple = None
         self.reconnect_attempts = reconnect_attempts
+        self.lg = PurpleLogger.PurpleLogger.get_logger('PurpleChat', 'purpleChat.log')
 
     def purple_init(self, no_sys_exit, suppress_error):
         bus = dbus.SessionBus()
@@ -46,6 +48,7 @@ class Purple(object):
         account_name = self.purple.PurpleAccountGetUsername(account)
         conv_title = self.purple.PurpleConversationGetTitle(conversation)
         message_obj = PurpleMessage(account_name, sender, message, conv_title, flags)
+        self.lg.debug("\n{}".format(message_obj.str_object()))
         self.route_dispatch.queue_message(message_obj)
 
     def account_connecting(self, account):
