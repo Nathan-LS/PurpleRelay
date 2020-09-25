@@ -46,10 +46,20 @@ class DiscordBot(discord.Client):
     def start_bot(self):
         if not self.core.bot_token:
             print("Config bot token missing")
-            os._exit(1)
+            self.core.shutdown_self(exit_code=1, hard_exit=False)
         try:
             self.run(self.core.bot_token)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            os._exit(1)
+            self.core.shutdown_self(exit_code=1, hard_exit=False)
+
+    async def close(self):
+        print("===========Received signal to shut down.===========")
+        print("Logging out from Discord...")
+        try:
+            await super().close()
+            self.core.shutdown_self(exit_code=0, hard_exit=False)
+        except Exception as ex:
+            print(ex)
+            self.core.shutdown_self(exit_code=1, hard_exit=True)

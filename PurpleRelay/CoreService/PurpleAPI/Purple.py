@@ -10,6 +10,7 @@ from CoreService.RelayRouter.RouteDispatch import RouteDispatch
 import os
 import asyncio
 import signal
+from functools import partial
 
 
 class Purple(object):
@@ -95,8 +96,8 @@ class Purple(object):
                 if not await loop.run_in_executor(None, self._watcher_test):
                     if fail_count == fail_limit and fail_limit != 0:
                         print("Reached the max number of failed DBUS restart attempts... Program exiting...")
-                        await loop.run_in_executor(None, self._stop)
-                        await self.core.shutdown_self(1, hard_exit=True)
+                        self._stop()
+                        self.core.shutdown_self(1, hard_exit=True)
                         break
                     else:
                         fail_count += 1
@@ -110,7 +111,7 @@ class Purple(object):
     async def start(self):
         """"only call once to initially start main thread and watcher"""
         loop = asyncio.get_event_loop()
-        loop.run_in_executor(None, self._run)
+        loop.run_in_executor(None, partial(self._run, True, False))
         loop.create_task(self._dbus_watcher())
 
 

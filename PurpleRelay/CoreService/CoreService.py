@@ -10,6 +10,8 @@ from CoreService.RelayRouter.RouteDispatch import RouteDispatch
 from CoreService.DiscordBot.DiscordBot import DiscordBot
 from CoreService.PurpleAPI.Purple import Purple
 from typing import List
+from functools import partial
+import signal
 
 
 class CoreService(object):
@@ -28,17 +30,11 @@ class CoreService(object):
         self.route_dispatcher.start_relay_dequeue_tasks()
         self.purple = Purple(route_dispatch=self.route_dispatcher, core_service=self,
                              reconnect_attempts=self.max_dbus_reconnect)
+        self.bot = DiscordBot(core_service=self)
 
         self.discord_loop.create_task(self.purple.start())
-        self.bot = DiscordBot(core_service=self)
-        self.bot.start_bot()
 
-        #
-        # self.discord_loop = asyncio.new_event_loop()
-        # self.messages = janus.Queue(loop=self.discord_loop)
-        # self.bot = DiscordBot(self)
-        # self.task_purple = self.threadex.submit(self.purple.run)
-        # self.bot.start_bot()
+        self.bot.start_bot()
 
     def read_config(self):
         try:
@@ -80,8 +76,13 @@ class CoreService(object):
     def run(cls):
         cls()
 
-    async def shutdown_self(self, exit_code=0, hard_exit=False):
+    def shutdown_self(self, exit_code=0, hard_exit=False):
         print("Exiting application... Goodbye")
+        try:
+            self.purple._stop()
+        except Exception as ex:
+            hard_exit = True
+            print(ex)
         self.threadex.shutdown(wait=False)
         if not hard_exit:
             sys.exit(exit_code)
