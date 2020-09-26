@@ -1,5 +1,4 @@
 import datetime
-import html
 from bs4 import BeautifulSoup
 import re
 
@@ -8,9 +7,8 @@ class PurpleMessage(object):
     def __init__(self, account, sender, message, conversation, flags):
         self.account = str.encode(account, encoding="utf-8", errors="ignore").decode("utf-8", errors="ignore")
         self.sender = str.encode(sender, encoding="utf-8", errors="ignore").decode("utf-8", errors="ignore")
-        self.message_html = message
-        self.message: str = str.encode(BeautifulSoup(message, 'html.parser').get_text(),
-                                       encoding="utf-8", errors="ignore").decode("utf-8", errors="ignore")
+        self.message_raw = message
+        self.message: str = self.parse_html(self.message_raw)
         self.conversation = str.encode(conversation, encoding="utf-8", errors="ignore").decode("utf-8", errors="ignore")
         self.flags = str(flags)
         self.time = datetime.datetime.utcnow()
@@ -19,6 +17,14 @@ class PurpleMessage(object):
         self.send_attempts = 0
         self.max_send_attempts = 3
 
+    def parse_html(self, html_message):
+        message_text = html_message.replace("<b>", "**").replace("</b>", "**").replace("< /b>", "**")
+        message_text = message_text.replace("<i>", "*").replace("</i>", "*").replace("< /i>", "*")
+        soup = BeautifulSoup(message_text, 'html.parser')
+        for line_break in soup.find_all("br"):
+            line_break.replace_with("\n")
+        return str.encode(soup.get_text(), encoding="utf-8", errors="ignore").decode(encoding="utf-8", errors="ignore")
+
     def str_object(self):
         """returns string of the entire object for verbose printing mode"""
         s = "Time: \"{}\"\n".format(self.time)
@@ -26,7 +32,8 @@ class PurpleMessage(object):
         s += "Sender: \"{}\"\n".format(self.sender)
         s += "Conversation: \"{}\"\n".format(self.conversation)
         s += "Flags: \"{}\"\n".format(self.flags)
-        s += "Message: \"{}\"\n".format(self.message)
+        s += "Message_raw: \"{}\"\n".format(self.message_raw)
+        s += "Message: \"{}\"\n".format(self.message.replace("\n", "\\n"))
         return s
 
     def __str__(self):
@@ -63,9 +70,15 @@ class PurpleMessage(object):
         if mention:
             response += "{} ".format(mention)
         if title:
-            response += "{} ".format(title)
+            if timestamp:
+                response += "{} - ".format(title)
+            else:
+                response += "{}".format(title)
         if timestamp:
-            response += "{} - ".format(self.time_str)
+            response += "{}".format(self.time_str)
+
+        if len(response) != 0:
+            response += "\n"
         if self.sender:
             response += "{}: ".format(self.sender)
         if strip_mention:
