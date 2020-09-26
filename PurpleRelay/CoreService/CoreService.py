@@ -51,6 +51,7 @@ class CoreService(object):
                 self.max_dbus_reconnect = int(config.get("max_dbus_reconnect", 5))
                 routes: list = d.get("routes", [])
                 i = 1
+                print("Loading route configuration...")
                 for r in routes:
                     self.route_loader(i, r)
                     i += 1
@@ -64,7 +65,6 @@ class CoreService(object):
             sys.exit(1)
 
     def route_loader(self, route_number: int, r: dict):
-        print("Loading route configuration...")
         targets = []
         target_number = 1
         for t in r.get("targets", []):
