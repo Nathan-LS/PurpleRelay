@@ -83,12 +83,35 @@ class Purple(object):
         self._stop()
         self._run(no_sys_exit=True, suppress_error=True)
 
-    def _watcher_test(self):
+    def purple_accounts_get_all_active(self) -> dbus.Array:
+        return self.purple.PurpleAccountsGetAllActive()
+
+    def purple_accounts_total_active(self):
+        return len(self.purple_accounts_get_all_active())
+
+    def purple_accounts_get_total_connected(self) -> int:
+        total_connected = 0
+        for a in self.purple_accounts_get_all_active():
+            if self.purple.PurpleAccountIsConnected(a):
+                total_connected += 1
+        return int(total_connected)
+
+    async def async_purple_accounts_get_total_connected(self) -> int:
+        return await asyncio.get_event_loop().run_in_executor(None, self.purple_accounts_get_total_connected)
+
+    async def async_purple_accounts_get_total_enabled(self) -> int:
+        return await asyncio.get_event_loop().run_in_executor(None, self.purple_accounts_total_active)
+
+    def check_dbus_connection(self):
         try:
-            self.purple.PurpleAccountsGetAllActive()
+            self.purple_accounts_get_all_active()
+            self.purple_accounts_get_total_connected()
             return True
         except:
             return False
+
+    async def async_check_dbus_connection(self):
+        return await asyncio.get_event_loop().run_in_executor(None, self.check_dbus_connection)
 
     async def _dbus_watcher(self):
         loop = asyncio.get_event_loop()
@@ -96,7 +119,7 @@ class Purple(object):
         fail_count = 0
         while True:
             if isinstance(self.loop, GLib.MainLoop):
-                if not await loop.run_in_executor(None, self._watcher_test):
+                if not await self.async_check_dbus_connection():
                     if fail_count == fail_limit and fail_limit != 0:
                         print("Reached the max number of failed DBUS restart attempts... Program exiting...")
                         self._stop()
@@ -109,7 +132,7 @@ class Purple(object):
                     await asyncio.sleep(15)
                 else:
                     fail_count = 0
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(5)
 
     async def start(self):
         """"only call once to initially start main thread and watcher"""

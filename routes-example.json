@@ -1,7 +1,8 @@
 {
   "config": {
     "token": "",
-    "max_dbus_reconnect": 5
+    "max_dbus_reconnect": 5,
+    "bot_status": true
   },
   "routes": [
     {

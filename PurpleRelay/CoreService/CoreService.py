@@ -16,12 +16,13 @@ import logging
 
 class CoreService(object):
     def __init__(self):
-
+        print(self.get_program_str(spacing=True))
         self.relays: List[RouteSource] = []
         self.bot_token = ""
+        self.bot_update_status = True
         self.max_dbus_reconnect = 5
 
-        self.threadex = ThreadPoolExecutor(max_workers=3)
+        self.threadex = ThreadPoolExecutor(max_workers=5)
         self.discord_loop = asyncio.new_event_loop()
         self.discord_loop.set_default_executor(self.threadex)
         asyncio.set_event_loop(self.discord_loop)
@@ -48,6 +49,7 @@ class CoreService(object):
                 if not isinstance(config, dict):
                     raise KeyError("Missing config dictionary in route.json.")
                 self.bot_token = config.get("token", "")
+                self.bot_update_status = bool(config.get("bot_status", True))
                 self.max_dbus_reconnect = int(config.get("max_dbus_reconnect", 5))
                 routes: list = d.get("routes", [])
                 i = 1
@@ -95,6 +97,18 @@ class CoreService(object):
             PurpleLogger.PurpleLogger.get_logger('RelayRoutes', 'relayRoutes.log', level=logging.INFO,
                                                  console_print=True, console_level=logging.WARNING,
                                                  days_delete_after=days_delete_after)
+
+    @classmethod
+    def get_version(cls):
+        return "v0.10.0"
+
+    @classmethod
+    def get_program_str(cls, spacing=False):
+        if spacing:
+            spacing_str = "=========="
+        else:
+            spacing_str = ""
+        return "{} PurpleRelay {} (PurpleRelay.vdtns.com) {}".format(spacing_str, cls.get_version(), spacing_str)
 
     @classmethod
     def run(cls):
