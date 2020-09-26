@@ -99,18 +99,24 @@ class RouteTarget(object):
         permissions = self.discord_channel_obj.permissions_for(self.discord_channel_obj.guild.me)
         return permissions.send_messages
 
-    async def init_discord_target(self, discord_client: discord.Client):
+    async def init_discord_target(self, discord_client: discord.Client, first_load=False):
+        if isinstance(self.task, asyncio.Task):
+            return  # already loaded no need to start or check
         c = discord_client.get_channel(self.channel_id)
         if isinstance(c, discord.TextChannel):
             self.discord_channel_obj = c
             self.discord_loaded = True
             self.discord_channel_name = c.name
             self.discord_guild_name = c.guild.name
+            self.task = asyncio.get_event_loop().create_task(self.dequeue_task())
         s = "Target Name: {}\nLoaded/Found: {} \nLoaded Channel Name: {}\nLoaded Server Name: {}\nCan Text: {}\n" \
             "Can Embed: {}\n".format(self.name, self.discord_loaded, self.discord_channel_name,
                                      self.discord_guild_name, await self.can_message(), await self.can_embed())
-        print(s)
-        self.task = asyncio.get_event_loop().create_task(self.dequeue_task())
+        if first_load:
+            print(s)
+        else:
+            if isinstance(self.task, asyncio.Task):
+                print(s)
 
     async def queue_message(self, m: PurpleMessage):
         copied_message = deepcopy(m)

@@ -27,9 +27,16 @@ class DiscordBot(discord.Client):
 
     async def init_route_targets(self):
         await self.wait_until_ready()
-        relay_targets = self.route_dispatch.get_all_route_targets()
-        for r in relay_targets:
-            await r.init_discord_target(self)
+        print("===========Loading Relay Targets===========")
+        first_load = True
+        while True:
+            relay_targets = self.route_dispatch.get_all_route_targets()
+            for r in relay_targets:
+                await r.init_discord_target(discord_client=self, first_load=first_load)
+            if first_load:
+                print("Done loading relay targets...")
+            first_load = False
+            await asyncio.sleep(60)
 
     async def on_message(self, message):
         """no commands for now"""
