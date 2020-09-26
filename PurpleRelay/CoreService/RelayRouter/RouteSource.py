@@ -65,6 +65,21 @@ class RouteSource(object):
             if not isinstance(r, RouteTarget):
                 raise TypeError("RouteSource was passed a non-relay object in target list.")
         self.targets: List[RouteTarget] = targets
+        print(self.str_config())
+
+    def str_config(self):
+        s = "Name: \"{}\"\n".format(self.name)
+        s += "SrcType: \"{}\"\n".format(self.src)
+        s += "Regex input filter account: \"{}\"\n".format(self.account.pattern)
+        s += "Regex input filter sender: \"{}\"\n".format(self.sender.pattern)
+        s += "Regex input filter conversation: \"{}\"\n".format(self.conversation.pattern)
+        s += "Regex input filter message: \"{}\"\n".format(self.message.pattern)
+        s += "Regex input filter flags: \"{}\"\n".format(self.flags.pattern)
+        target_list = []
+        for r in self.targets:
+            target_list.append("{}({})".format(r.channel_id, r.name))
+        s += "Relay targets: {}\n".format(str(target_list))
+        return s
 
     def get_targets(self):
         return self.targets

@@ -64,6 +64,7 @@ class CoreService(object):
             sys.exit(1)
 
     def route_loader(self, route_number: int, r: dict):
+        print("Loading route configuration...")
         targets = []
         target_number = 1
         for t in r.get("targets", []):
