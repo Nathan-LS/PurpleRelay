@@ -20,7 +20,6 @@ Relaying is simple to set up and there is even a [Docker image](https://hub.dock
   * [Start an instance](#start-an-instance)
   * [Where to Store Data](#where-to-store-data)
   * [Docker Stack and Compose](#docker-stack-and-compose)
-  * [Quick reference](#quick-reference)
 - [Running from source](#running-from-source)
   * [Requirements](#requirements)
   * [Installing dependencies and running](#installing-dependencies-and-running)
@@ -28,7 +27,7 @@ Relaying is simple to set up and there is even a [Docker image](https://hub.dock
 ## Relay Configuration
 All possible configuration for the bot is done in the ```routes.json``` file. There is a provided ```routes-example.json``` in this repo for a simple setup.
 
-###Reference
+### Reference
 - **config**: (dict) - Core config key-value pairs
     - **token**: (string, required) - The Discord bot token from [Discord developers](https://discordapp.com/developers/applications/) that will be used to join and send messages to relay target channels.
     - **max_dbus_reconnect**: (integer, default: 5) - The maximum number of D-BUS reconnection attempts to make in the event of a lost IPC connection to Pidgin/Finch before exiting with code 1. Set to ```0``` to disable and infinitely retry reconnecting to Pidgin/Finch. 
