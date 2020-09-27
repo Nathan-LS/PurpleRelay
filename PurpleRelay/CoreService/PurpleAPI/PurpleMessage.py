@@ -1,6 +1,7 @@
 import datetime
 from bs4 import BeautifulSoup
 import re
+import hashlib
 
 
 class PurpleMessage(object):
@@ -16,6 +17,8 @@ class PurpleMessage(object):
         self.discord_char_limit = 1999
         self.send_attempts = 0
         self.max_send_attempts = 3
+        self.hash_sha512 = hashlib.sha512(self.message.encode(encoding="utf-8", errors="ignore")).hexdigest()
+        self.posted_at = None
 
     def parse_html(self, html_message):
         message_text = html_message.replace("<b>", "**").replace("</b>", "**").replace("< /b>", "**")
@@ -88,36 +91,15 @@ class PurpleMessage(object):
         response += message_content
         return response[:self.discord_char_limit]
 
-    # def __eq__(self, other):
-    #     if self.sender == other.sender and self.message == other.message:
-    #         if self.core.spam_control:
-    #             if (self.time - other.time).total_seconds() <= self.core.spam_decay:
-    #                 return True
-    #             else:
-    #                 return False
-    #         else:
-    #             return False
-    #     else:
-    #         return False
-    #
-    # def get_time(self):
-    #     return self.time
+    def eq_message_text(self, other):
+        return self.hash_sha512 == other.hash_sha512
 
-    # def filter(self, channel_object):
-    #     assert isinstance(channel_object, Channel.Channel)
-    #     if not any(self.sender.lower() == i.lower() for i in channel_object.from_filter):
-    #         return False
-    #     return True
-    #
-    # async def post(self, channel: discord.TextChannel):
-    #     await channel.send(content=self.core.mention, embed=self.embed)
-    #     channel_name = "Unknown"
-    #     try:
-    #         channel_name = "{}".format(str(channel.name))
-    #         channel_name += "({})".format(str(channel.guild.name))
-    #     except Exception as ex:
-    #         print(ex)
-    #         traceback.print_exc()
-    #     print("Delivered message: '{}' to channel: {}".format(self.message_txt, str(channel_name)))
+    def seconds_since_posted(self) -> int:
+        """returns the seconds since posted"""
+        if isinstance(self.posted_at, datetime.datetime):
+            return int((datetime.datetime.utcnow() - self.posted_at).total_seconds())
+        else:
+            raise TypeError("Message is missing posted_at timestamp as it was not set.")
 
-
+    def set_posted(self):
+        self.posted_at = datetime.datetime.utcnow()
