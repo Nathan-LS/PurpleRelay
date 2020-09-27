@@ -108,8 +108,10 @@ class RouteTarget(object):
             self.task_dequeue = asyncio.get_event_loop().create_task(self.dequeue_task())
             self.task_cleanup = asyncio.get_event_loop().create_task(self.cleanup_task())
         s = "Target Name: {}\nLoaded/Found: {} \nLoaded Channel Name: {}\nLoaded Server Name: {}\nCan Text: {}\n" \
-            "Can Embed: {}\n".format(self.name, self.discord_loaded, self.discord_channel_name,
-                                     self.discord_guild_name, await self.can_message(), await self.can_embed())
+            "Can Embed: {}\nSpam Control Seconds: {}\n".format(self.name, self.discord_loaded,
+                                                               self.discord_channel_name, self.discord_guild_name,
+                                                               await self.can_message(), await self.can_embed(),
+                                                               self.spam_control_seconds)
         if first_load:
             print(s)
         else:
