@@ -37,11 +37,11 @@ All possible configuration for the bot is done in the ```routes.json``` file. Th
     - *route dictionary definition*
         - **name**: (string, default: "relay_ID") - The identifier name used in logging and the console. This is simply an internal identifier and isn't relayed.
         - **src**: (string) - The service type of the source Pidgin/Finch account (ex: IRC, XMPP). This does nothing at the moment but may be implemented in the future for chat source specific overrides and handling.
-        - **account**: (string, default: .*) - The account input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
-        - **sender**: (string, default: .*) - The sender input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
-        - **conversation**: (string, default: .*) - The conversation input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
-        - **message**: (string, default: .*) - The message input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
-        - **flags**: (string, default: .*) - The flags input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
+        - **filter_input_account**: (string, default: .*) - The account input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
+        - **filter_input_sender**: (string, default: .*) - The sender input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
+        - **filter_input_conversation**: (string, default: .*) - The conversation input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
+        - **filter_input_message**: (string, default: .*) - The message input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
+        - **filter_input_flags**: (string, default: .*) - The flags input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
         - **targets**: (list, default: []) - A list containing multiple relay target dictionaries. 
             - *relay target dictionary definition*
                 - **name**: (string, default: "route_ID") - The identifier name used in logging and the console. This is simply an internal identifier and isn't relayed.
@@ -52,7 +52,7 @@ All possible configuration for the bot is done in the ```routes.json``` file. Th
                 - **timestamp**: (bool, default: true) - Display the timestamp of the source message prefixed to relayed messages.
                 - **mention**: (string, default: "") - The mention prefixed to relayed messages. Examples: "@here", "@everyone", "@group"
                 - **strip_mention**: (bool, default: false) - Strips "@here" and "@everyone" from source messages before relaying the message. This option does not conflict with the "mention" setting for targets.
-                - **spam_decay_seconds**: (integer, default: false) - Do not relay a message if the same content has be successfully relayed in this many seconds ago. Setting this to ```0``` disables spam control and duplicate messages can be relayed. 
+                - **spam_control_seconds**: (integer, default: false) - Do not relay a message if the same content has be successfully relayed in this many seconds ago. Setting this to ```0``` disables spam control and duplicate messages can be relayed. 
 - **logger**: (dict) - Logger configuration
     - **log_purple_messages**: (bool, default: true) - Logs all messages received by Pidgin/Finch into ./logs/purpleChat/. Includes time, account, sender, conversation, flags, message_raw/html, message text. Useful for building and testing input regex filters.
     - **log_routed_messages**: (bool, default: true) - Logs the message content and relay target channel id if the message was successfully relayed to ./logs/relayRoutes/
@@ -70,11 +70,11 @@ All possible configuration for the bot is done in the ```routes.json``` file. Th
     {
       "name": "RelayName",
       "src": "IRC",
-      "account": ".*",
-      "sender": ".*",
-      "conversation": ".*",
-      "message": ".*",
-      "flags": ".*",
+      "filter_input_account": ".*",
+      "filter_input_sender": ".*",
+      "filter_input_conversation": ".*",
+      "filter_input_message": ".*",
+      "filter_input_flags": ".*",
       "targets": [
         {
           "name": "InternalRouteName",
@@ -85,7 +85,7 @@ All possible configuration for the bot is done in the ```routes.json``` file. Th
           "timestamp": true,
           "mention": "@here",
           "strip_mention": true,
-          "spam_decay_seconds": 0
+          "spam_control_seconds": 0
         }
       ]
     }
@@ -114,6 +114,8 @@ The Docker variant of PurpleRelay uses Finch to provide a GUI-less connection to
 
 ### Start an instance
 This image uses a single Docker volume to persist the Finch config, logs, and ```routes.json```. See [volumes](https://docs.docker.com/storage/volumes/) for information about Docker volumes.
+
+See this [guide](https://developer.pidgin.im/wiki/Using%20Finch) for using Finch.
 1. Create a named Docker volume.
     ```
    docker volume create relayvol
@@ -125,7 +127,14 @@ This image uses a single Docker volume to persist the Finch config, logs, and ``
 3. Place the configured ```routes.json``` file into the root of the volume's mountpoint.
 4. Start PurpleRelay with the volume.
     ```
-    docker run -it -v relayvol:/app nathanls/purplerelay
+    docker run -it -v relayvol:/app --name myrelay nathanls/purplerelay
+    ```
+5. Finch is started in the background on the container as a [screen](https://www.gnu.org/software/screen/screen.html) session named ```finch```. 
+You will need to exec into the container to initially sign into the chat accounts with Finch from another terminal session. 
+If a volume is mounted at ```/app``` on the container the Finch config will persist across restarts.
+You can also manually edit files within the Pidgin/Finch config directory which would be located at ```/app/.purple``` on the container and volume.
+    ```
+    docker exec -it myrelay screen -r finch
     ```
 ### Where to Store Data
 Persist data through mounting named volumes to the ```/app``` directory within the container. 
@@ -188,14 +197,11 @@ Note: Package names and commands may differ between Linux distros.
 See [Relay Configuration](#relay-configuration) for information on configuration definitions.
     ```
     mv routes-example.json routes.json
-    nano routes-example.json
+    nano routes.json
     ```
 5. Make a [Discord application/bot](https://discordapp.com/developers/applications/) and copy the token to ```config->token``` in the ```routes.json``` file. 
 See the [relay-configuration](#relay-configuration) on this document for config reference.
-    ```
-    nano default-config.ini
-    mv default-config.ini config.ini
-    ```
+
 6. Ensure Pidgin or Finch is running and start the bot.
     ```
     ./venv/bin/python3 ./PurpleRelay

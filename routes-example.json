@@ -8,11 +8,11 @@
     {
       "name": "RelayName",
       "src": "IRC",
-      "account": ".*",
-      "sender": ".*",
-      "conversation": ".*",
-      "message": ".*",
-      "flags": ".*",
+      "filter_input_account": ".*",
+      "filter_input_sender": ".*",
+      "filter_input_conversation": ".*",
+      "filter_input_message": ".*",
+      "filter_input_flags": ".*",
       "targets": [
         {
           "name": "InternalRouteName",
@@ -23,7 +23,7 @@
           "timestamp": true,
           "mention": "@here",
           "strip_mention": true,
-          "spam_decay_seconds": 0
+          "spam_control_seconds": 0
         }
       ]
     }
