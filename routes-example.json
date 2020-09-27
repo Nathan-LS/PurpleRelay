@@ -8,11 +8,11 @@
     {
       "name": "RelayName",
       "src": "IRC",
-      "account": "",
-      "sender": "",
-      "conversation": "",
-      "message": "",
-      "flags": "",
+      "account": ".*",
+      "sender": ".*",
+      "conversation": ".*",
+      "message": ".*",
+      "flags": ".*",
       "targets": [
         {
           "name": "InternalRouteName",
@@ -23,8 +23,7 @@
           "timestamp": true,
           "mention": "@here",
           "strip_mention": true,
-          "spam_control": true,
-          "spam_decay": 30
+          "spam_decay_seconds": 0
         }
       ]
     }
@@ -32,6 +31,6 @@
   "logger": {
       "log_purple_messages": true,
       "log_routed_messages": true,
-      "days_delete_after": 30
+      "days_delete_after": 5
   }
 }

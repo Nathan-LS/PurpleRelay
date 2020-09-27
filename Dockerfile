@@ -36,4 +36,4 @@ WORKDIR /opt/PurpleRelay
 RUN pip3 install --user -r requirements.txt
 WORKDIR /app
 ENTRYPOINT ["/opt/PurpleRelay/DockerEntry.sh"]
-CMD ["python3", "/opt/PurpleRelay/PurpleRelay"]
+CMD ["python3.8", "/opt/PurpleRelay/PurpleRelay"]

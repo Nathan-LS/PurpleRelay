@@ -11,7 +11,7 @@ import Exc
 
 class RouteTarget(object):
     def __init__(self, order_number: int, name: str, channel_id: int, title: str, embed: bool, embed_color: int,
-                 mention: str, strip_mention: bool, spam_control: bool, spam_decay: int, timestamp: bool):
+                 mention: str, strip_mention: bool, spam_decay_seconds: int, timestamp: bool):
         self.queue_unprocessed: asyncio.Queue = asyncio.Queue(loop=asyncio.get_event_loop())
         self.task = None
         self.discord_loaded = False
@@ -66,19 +66,12 @@ class RouteTarget(object):
         else:
             self.strip_mention: bool = strip_mention
 
-        if spam_control is None:
-            self.spam_control: bool = False
-        elif not isinstance(spam_control, bool):
-            raise TypeError("Route target 'spam_control' must be of type bool. Got '{}'".format(spam_control))
+        if spam_decay_seconds is None:
+            self.spam_decay_seconds: int = 0
+        elif not isinstance(spam_decay_seconds, int):
+            raise TypeError("Route target 'spam_decay_seconds' must be of type int. Got '{}'".format(spam_decay_seconds))
         else:
-            self.spam_control: bool = spam_control
-
-        if spam_decay is None:
-            self.spam_decay: int = 0
-        elif not isinstance(spam_decay, int):
-            raise TypeError("Route target 'spam_decay' must be of type int. Got '{}'".format(spam_decay))
-        else:
-            self.spam_decay: int = spam_decay
+            self.spam_decay_seconds: int = spam_decay_seconds
 
         if timestamp is None:
             self.timestamp: bool = True

@@ -72,7 +72,7 @@ class CoreService(object):
         for t in r.get("targets", []):
             new_target = RouteTarget(target_number, t.get("name"), t.get("channel_id"), t.get("title"), t.get("embed"),
                                      t.get("embed_color"), t.get("mention"), t.get("strip_mention"),
-                                     t.get("spam_control"), t.get("spam_decay"), t.get("timestamp"))
+                                     t.get("spam_decay_seconds"), t.get("timestamp"))
             targets.append(new_target)
             target_number += 1
         route_source = RouteSource(route_number, r.get("name"), r.get("src"), r.get("account"), r.get("sender"),
