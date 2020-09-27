@@ -31,7 +31,7 @@ class RouteSource(object):
         elif not isinstance(account, str):
             raise TypeError("Route source 'account' must be of type regex str pattern. Got '{}'".format(account))
         else:
-            self.account: Pattern = re.compile(".*", re.DOTALL)
+            self.account: Pattern = re.compile(account, re.DOTALL)
 
         if not sender:
             self.sender: Pattern = re.compile(".*", re.DOTALL)
@@ -45,14 +45,14 @@ class RouteSource(object):
         elif not isinstance(conversation, str):
             raise TypeError("Route source 'conversation' must be of type regex str pattern. Got '{}'".format(conversation))
         else:
-            self.conversation: Pattern = re.compile(conversation)
+            self.conversation: Pattern = re.compile(conversation, re.DOTALL)
 
         if not message:
             self.message: Pattern = re.compile(".*", re.DOTALL)
         elif not isinstance(message, str):
             raise TypeError("Route source 'message' must be of type regex str pattern. Got '{}'".format(message))
         else:
-            self.message: Pattern = re.compile(message)
+            self.message: Pattern = re.compile(message, re.DOTALL)
 
         if not flags:
             self.flags: Pattern = re.compile(".*", re.DOTALL)

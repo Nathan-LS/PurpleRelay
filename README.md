@@ -1,4 +1,4 @@
-# PurpleRelay v1.0.0
+# PurpleRelay v1.0.1
 [![](https://img.shields.io/docker/pulls/nathanls/purplerelay.svg)](https://hub.docker.com/r/nathanls/purplerelay)
 [![](https://img.shields.io/github/license/Nathan-LS/PurpleRelay.svg)](https://github.com/Nathan-LS/PurpleRelay/blob/master/LICENSE)
 [![](https://img.shields.io/discord/379777846144532480.svg)](https://discord.gg/Np3FCUn) 
