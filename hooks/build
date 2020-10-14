@@ -1,0 +1,28 @@
+#!/bin/bash
+VERSION_PATCH="1.0.2"
+VERSION_MINOR=$(echo "$VERSION_PATCH" | sed 's/.[0-9]$//')
+docker build -f $DOCKERFILE_PATH -t $IMAGE_NAME .
+
+if [[ "$SOURCE_BRANCH" == "master" ]]; then
+  docker tag $IMAGE_NAME $DOCKER_REPO:stable
+  docker push $DOCKER_REPO:stable
+
+  docker tag $IMAGE_NAME $DOCKER_REPO:$VERSION_PATCH
+  docker push $DOCKER_REPO:$INSIGHT_VERSION_PATCH
+
+  docker tag $IMAGE_NAME $DOCKER_REPO:$VERSION_MINOR
+  docker push $DOCKER_REPO:$VERSION_MINOR
+fi
+
+if [[ "$SOURCE_BRANCH" == "development" ]]; then
+  docker tag $IMAGE_NAME $DOCKER_REPO:unstable
+  docker push $DOCKER_REPO:unstable
+
+  docker tag $IMAGE_NAME $DOCKER_REPO:"$VERSION_PATCH-dev"
+  docker push $DOCKER_REPO:"$VERSION_PATCH-dev"
+
+  docker tag $IMAGE_NAME $DOCKER_REPO:"$VERSION_MINOR-dev"
+  docker push $DOCKER_REPO:"$VERSION_MINOR-dev"
+fi
+
+

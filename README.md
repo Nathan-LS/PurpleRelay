@@ -1,4 +1,4 @@
-# PurpleRelay v1.0.1
+# PurpleRelay v1.0.2
 [![](https://img.shields.io/docker/pulls/nathanls/purplerelay.svg)](https://hub.docker.com/r/nathanls/purplerelay)
 [![](https://img.shields.io/github/license/Nathan-LS/PurpleRelay.svg)](https://github.com/Nathan-LS/PurpleRelay/blob/master/LICENSE)
 [![](https://img.shields.io/discord/379777846144532480.svg)](https://discord.gg/Np3FCUn) 
@@ -6,7 +6,7 @@
 PurpleRelay relays and routes messages from [Pidgin/Finch](https://www.pidgin.im/) to [Discord](https://discord.com/) utilizing [D-BUS](https://www.freedesktop.org/wiki/Software/dbus/) for IPC(inter-process communication). 
 
 PurpleRelay is configured through a ```routes.json``` file to filter incoming messages received through Pidgin using regular expressions that are then relayed to specified Discord channels. 
-Any instant messaging / chat account that Pidgin supports or through [plugins](https://www.pidgin.im/plugins/) should theoretically be capable of being relayed to Discord.
+Theoretically, any instant messaging / chat protocol supported [officially](https://www.pidgin.im/) or through [plugins](https://www.pidgin.im/plugins/) can be relayed to Discord using PurpleRelay.
 
 Relaying is simple to set up and there is even a [Docker image](https://hub.docker.com/r/nathanls/purplerelay) available utilizing Finch for a headless GUI-less setup. 
 
@@ -32,7 +32,7 @@ All possible configuration for the bot is done in the ```routes.json``` file. Th
     - **token**: (string, required) - The Discord bot token from [Discord developers](https://discordapp.com/developers/applications/) that will be used to join and send messages to relay target channels.
     - **max_dbus_reconnect**: (integer, default: 5) - The maximum number of D-BUS reconnection attempts to make in the event of a lost IPC connection to Pidgin/Finch before exiting with code 1. Set to ```0``` to disable and infinitely retry reconnecting to Pidgin/Finch. 
     - **bot_status**: (bool, default: true) - Change the bot status color indicator for D-BUS errors or chat disconnects and set the activity indicator to display currently connected/total enabled Pidgin/Finch accounts. Setting this to ```false``` will disable updating the status indicator and activity so the bot will always appear as online(green).
-- **routes**: (list, default: []) - A list containing multiple relay route dictionaries. A relay route dictionary defines a set of regex rules for input messages that can then be routed to multiple Discord targets channels.
+- **routes**: (list, default: []) - A list containing multiple relay route dictionaries defining a source and one or more targets. A relay source dictionary defines a set of regex rules for input messages that can then be routed to multiple Discord targets channels.
     - *route dictionary definition*
         - **name**: (string, default: "relay_ID") - The identifier name used in logging and the console. This is simply an internal identifier and isn't relayed.
         - **src**: (string) - The service type of the source Pidgin/Finch account (ex: IRC, XMPP). This does nothing at the moment but may be implemented in the future for chat source specific overrides and handling.
@@ -40,7 +40,7 @@ All possible configuration for the bot is done in the ```routes.json``` file. Th
         - **filter_input_sender**: (string, default: .*) - The sender input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
         - **filter_input_conversation**: (string, default: .*) - The conversation input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
         - **filter_input_message**: (string, default: .*) - The message input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
-        - **filter_input_flags**: (string, default: .*) - The flags input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled.
+        - **filter_input_flags**: (string, default: .*) - The flags input filter regex. A Pidgin/Finch message must match this and all other input regex filters to be relayed to targets. Regex DOTALL flag is enabled. PurpleRelay runs the regex against the integer conversion from the hexadecimal Pidgin/Finch PurpleMessageEnum.
         - **targets**: (list, default: []) - A list containing multiple relay target dictionaries. 
             - *relay target dictionary definition*
                 - **name**: (string, default: "route_ID") - The identifier name used in logging and the console. This is simply an internal identifier and isn't relayed.
@@ -51,7 +51,7 @@ All possible configuration for the bot is done in the ```routes.json``` file. Th
                 - **timestamp**: (bool, default: true) - Display the timestamp of the source message prefixed to relayed messages.
                 - **mention**: (string, default: "") - The mention prefixed to relayed messages. Examples: "@here", "@everyone", "@group"
                 - **strip_mention**: (bool, default: false) - Strips "@here" and "@everyone" from source messages before relaying the message. This option does not conflict with the "mention" setting for targets.
-                - **spam_control_seconds**: (integer, default: false) - Do not relay a message if the same content has be successfully relayed in this many seconds ago. Setting this to ```0``` disables spam control and duplicate messages can be relayed. 
+                - **spam_control_seconds**: (integer, default: 0) - Do not relay a message if the same content has be successfully relayed in this many seconds ago. Setting this to ```0``` disables spam control and duplicate messages can be relayed. 
 - **logger**: (dict) - Logger configuration
     - **log_purple_messages**: (bool, default: true) - Logs all messages received by Pidgin/Finch into ./logs/purpleChat/. Includes time, account, sender, conversation, flags, message_raw/html, message text. Useful for building and testing input regex filters.
     - **log_routed_messages**: (bool, default: true) - Logs the message content and relay target channel id if the message was successfully relayed to ./logs/relayRoutes/

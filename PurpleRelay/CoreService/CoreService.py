@@ -101,7 +101,7 @@ class CoreService(object):
 
     @classmethod
     def get_version(cls):
-        return "v1.0.1"
+        return "v1.0.2"
 
     @classmethod
     def get_program_str(cls, spacing=False):

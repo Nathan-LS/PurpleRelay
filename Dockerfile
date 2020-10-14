@@ -4,6 +4,7 @@ LABEL url="https://github.com/Nathan-LS/PurpleRelay"
 
 ENV PYTHONUNBUFFERED=1
 
+RUN dnf install -y coreutils
 
 RUN dnf install -y python38
 #dependencies for pygobject
